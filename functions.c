@@ -3,9 +3,13 @@
 #include <stdlib.h>
 #include "functions.h"
 #include <string.h>
+#include <time.h>
 
 // UNOS, ISPIS,BRISANJE I UREDIVANJE NARUDZBA I IGRA //
-void fUnos(char* datoteka, unsigned int* pBroj,unsigned int* pBroj1) {
+void fUnos(char* datoteka, unsigned int* pBroj, char* datoteka1,unsigned int* pBroj1) {
+
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
 
 	FILE* pDatotekaDodajNaKraj = NULL;
 	pDatotekaDodajNaKraj = fopen(datoteka, "rb+");
@@ -16,7 +20,7 @@ void fUnos(char* datoteka, unsigned int* pBroj,unsigned int* pBroj1) {
 	}
 	else if (datoteka == "narudzbe.bin") {
 		FILE* pDatotekaProcitaj = NULL;
-		pDatotekaProcitaj = fopen("igre.bin", "rb");
+		pDatotekaProcitaj = fopen(datoteka1, "rb");
 
 		if (pDatotekaProcitaj == NULL) {
 			fprintf(stderr, "Citanje datoteke %s je neuspjesno", datoteka);
@@ -48,6 +52,7 @@ void fUnos(char* datoteka, unsigned int* pBroj,unsigned int* pBroj1) {
 				{
 					if (privremeniID == (sviKorisnici + i)->id) {
 						strcat(privremeniClan.naziv, (sviKorisnici + i)->naziv);
+						strcat(privremeniClan.zanr, (sviKorisnici + i)->zanr);
 						strcat(privremeniClan.cijena, (sviKorisnici + i)->cijena);
 						strcat(privremeniClan.edicija, (sviKorisnici + i)->edicija);
 						strcat(privremeniClan.godina, (sviKorisnici + i)->godina);
@@ -59,16 +64,17 @@ void fUnos(char* datoteka, unsigned int* pBroj,unsigned int* pBroj1) {
 					return;
 				}
 				printf("Unesite ime korisnika\n");
-				scanf("%30s", privremeniClan.ime);
+				scanf("%21s", privremeniClan.ime);
 				printf("Unesite prezime korisnika\n");
-				scanf("%30s", privremeniClan.prezime);
+				scanf("%21s", privremeniClan.prezime);
 				printf("Unesite e-mail korisnika\n");
-				scanf(" %50[^\n]", privremeniClan.eMail);
+				scanf(" %30[^\n]", privremeniClan.eMail);
 				printf("Unesite broj mobitela bez +385\n");
 				char privremeniBroj[10] = { '\0' };
 				scanf("%9s", privremeniBroj);
 				strcpy(privremeniClan.brojMobitela, "+385");
 				strcat(privremeniClan.brojMobitela, privremeniBroj);
+				snprintf(privremeniClan.kupljeno, sizeof(privremeniClan.kupljeno), "%d-%02d-%02d %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 				privremeniClan.id = (*pBroj)++;
 
 				fseek(pDatotekaDodajNaKraj, sizeof(unsigned int) + ((*pBroj - 1) * sizeof(NARUDZBA)), SEEK_SET);
@@ -84,26 +90,28 @@ void fUnos(char* datoteka, unsigned int* pBroj,unsigned int* pBroj1) {
 		unsigned int dan, mjesec, godina;
 		char* mjeseci[] = { "sijecnja", "veljace", "ozujka", "travnja", "svibnja", "lipnja",
 							"srpnja", "kolovoza","rujna","listopada", "studenoga", "prosinca", };
-		IGRA headNode = { 0 };
+		IGRA privremenaIgra = { 0 };
 		printf("Unesite naziv igre!\n");
-		scanf(" %30[^\n]s", headNode.naziv);
+		scanf(" %30[^\n]s", privremenaIgra.naziv);
+		printf("Unesite zanr igre!\n");
+		scanf(" %21[^\n]s", privremenaIgra.zanr);
 		printf("Unesite tip edicije!\n");
-		scanf(" %30[^\n]s", headNode.edicija);
+		scanf(" %21[^\n]s", privremenaIgra.edicija);
 		printf("Unesite cijenu igre!\n");
 		char privremenaCijena[6] = { 0 };
 		scanf("%5s", privremenaCijena);
-		strcpy(headNode.cijena, privremenaCijena);
-		strcat(headNode.cijena, "kn");
+		strcpy(privremenaIgra.cijena, privremenaCijena);
+		strcat(privremenaIgra.cijena, "kn");
 
 		do {
 			printf("Enter date(MM/DD/GGGG): \n");
 			scanf("%u/%u/%u", &mjesec, &dan, &godina);
 		} while (dan > 31 || dan <= 0 || mjesec > 12 || mjesec <= 0 || godina <= 2019 || godina > 9999);
-		snprintf(headNode.godina, sizeof(headNode.godina), "%u. %s %u.", dan, mjeseci[mjesec - 1], godina);
-		headNode.id = (*pBroj)++;
+		snprintf(privremenaIgra.godina, sizeof(privremenaIgra.godina), "%u. %s %u.", dan, mjeseci[mjesec - 1], godina);
+		privremenaIgra.id = (*pBroj)++;
 
 		fseek(pDatotekaDodajNaKraj, sizeof(unsigned int) + ((*pBroj - 1) * sizeof(IGRA)), SEEK_SET);
-		fwrite(&headNode, sizeof(IGRA), 1, pDatotekaDodajNaKraj);
+		fwrite(&privremenaIgra, sizeof(IGRA), 1, pDatotekaDodajNaKraj);
 		rewind(pDatotekaDodajNaKraj);
 		fwrite(pBroj, sizeof(unsigned int), 1, pDatotekaDodajNaKraj);
 		fclose(pDatotekaDodajNaKraj);
@@ -127,7 +135,7 @@ void fIspis(char* datoteka, unsigned int* pBroj)
 		fread(pBroj, sizeof(unsigned int), 1, pDatotekaProcitaj);
 
 		if (*pBroj == 0) {
-			printf("Popis igara je prazan!\n");
+			printf("Popis je prazan!\n");
 			fclose(pDatotekaProcitaj);
 			return;
 		}
@@ -141,18 +149,17 @@ void fIspis(char* datoteka, unsigned int* pBroj)
 			else {
 				fread(sviKorisnici, sizeof(NARUDZBA), *pBroj, pDatotekaProcitaj);
 				fclose(pDatotekaProcitaj);
-				printf("-----------------------------------------------------------------------------------------------------\n");
-				printf("| %-2s | %-20s | %-20s | %-30s | %-13s |\n", "ID", "IME", "PREZIME", "E-MAIL", "MOBITEL");
-				printf("-----------------------------------------------------------------------------------------------------\n");
+				printf("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+				printf("| %-2s | %-21s| %-21s| %-30s| %-13s | %-30s| %-21s| %-21s| %-7s| %-21s|\n", "ID", "IME", "PREZIME", "E-MAIL", "MOBITEL", "NAZIV", "ZANR", "EDICIJA", "CIJENA", "DATUM IZLASKA");
+				printf("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 
 				for (unsigned int i = 0; i < *pBroj; i++)
 				{
-					printf("| %-2d | %-20s | %-20s | %-30s | %-13s |\n", (sviKorisnici + i)->id, (sviKorisnici + i)->ime,
-						(sviKorisnici + i)->prezime,
-						(sviKorisnici + i)->eMail, (sviKorisnici + i)->brojMobitela);
-
+					printf("| %-2d | %-21s| %-21s| %-30s| %-13s | %-30s| %-21s| %-21s| %-7s| %-21s|\n", (sviKorisnici + i)->id, (sviKorisnici + i)->ime, (sviKorisnici + i)->prezime, (sviKorisnici + i)->eMail, (sviKorisnici + i)->brojMobitela, (sviKorisnici + i)->naziv,
+						(sviKorisnici + i)->zanr, (sviKorisnici + i)->edicija,
+						(sviKorisnici + i)->cijena, (sviKorisnici + i)->godina);
 				}
-				printf("-----------------------------------------------------------------------------------------------------\n");
+				printf("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 				free(sviKorisnici);
 			}
 		}
@@ -168,18 +175,18 @@ void fIspis(char* datoteka, unsigned int* pBroj)
 				fread(sviKorisnici, sizeof(IGRA), *pBroj, pDatotekaProcitaj);
 				fclose(pDatotekaProcitaj);
 
-				printf("-------------------------------------------------------------------------------------------------\n");
-				printf("| %-2s | %-30s | %-21s | %-7s | %-21s |\n", "ID", "NAZIV", "EDICIJA", "CIJENA", "DATUM IZLASKA");
-				printf("-------------------------------------------------------------------------------------------------\n");
+				printf("-------------------------------------------------------------------------------------------------------------------------\n");
+				printf("| %-2s | %-30s | %-21s | %-21s | %-7s | %-21s |\n", "ID", "NAZIV", "ZANR", "EDICIJA", "CIJENA", "DATUM IZLASKA");
+				printf("-------------------------------------------------------------------------------------------------------------------------\n");
 
 				for (unsigned int i = 0; i < *pBroj; i++)
 				{
-					printf("| %-2d | %-30s | %-21s | %-7s | %-21s |\n", (sviKorisnici + i)->id, (sviKorisnici + i)->naziv,
-						(sviKorisnici + i)->edicija,
+					printf("| %-2d | %-30s | %-21s | %-21s | %-7s | %-21s |\n", (sviKorisnici + i)->id, (sviKorisnici + i)->naziv,
+						(sviKorisnici + i)->zanr, (sviKorisnici + i)->edicija,
 						(sviKorisnici + i)->cijena, (sviKorisnici + i)->godina);
 
 				}
-				printf("-------------------------------------------------------------------------------------------------\n");
+				printf("-------------------------------------------------------------------------------------------------------------------------\n");
 				free(sviKorisnici);
 			}
 		}
@@ -190,7 +197,11 @@ void fIspis(char* datoteka, unsigned int* pBroj)
 	}
 }
 void fObrisi(char* datoteka, unsigned int* pBroj) {
-	
+
+	if (*pBroj == 0) {
+		printf("\nPopis je prazan!\n");
+		return;
+}
 FILE* fp = NULL;
 fp = fopen(datoteka, "rb");
 if (!fp) {
@@ -205,9 +216,9 @@ if (!fp_tmp) {
 	exit(EXIT_FAILURE);
 }
 fread(pBroj, sizeof(unsigned int), 1, fp);
-char trazenoIme[31] = { '\0' };
-printf("Unesite ime\n");
-scanf("%30s", &trazenoIme);
+unsigned int trazeniID = 0;
+printf("Unesite ID\n");
+scanf("%u", &trazeniID);
 unsigned int privremeni = 0;
 int found = 0;
 
@@ -223,8 +234,8 @@ if (datoteka == "narudzbe.bin")
 	privremeni = (*pBroj);
 	(*pBroj) = 0;
 	for (unsigned int i = 0; i < privremeni; i++) {
-		printf("\nime:%s, trazenoIme:%s\n", (sviKorisnici + i)->ime, trazenoIme);
-		if (strcmp(trazenoIme, (sviKorisnici + i)->ime) == 0) {
+		printf("\nID:%u, trazeniID:%u\n", (sviKorisnici + i)->id, trazeniID);
+		if (trazeniID == (sviKorisnici + i)->id) {
 			printf("Narudzba pronadena i uspjesno obrisana.\n\n");
 			found = 1;
 		}
@@ -236,7 +247,7 @@ if (datoteka == "narudzbe.bin")
 			fwrite(pBroj, sizeof(unsigned int), 1, fp_tmp);
 		}
 		if (!found) {
-			printf("Nijedna narudzba ne odgavara unesenom imenu: %s\n\n", trazenoIme);
+			printf("Nijedna narudzba ne odgavara unesenom ID-u: %u\n\n", trazeniID);
 	}
 }
 	fclose(fp_tmp);
@@ -258,8 +269,8 @@ else if (datoteka == "igre.bin")
 	privremeni = (*pBroj);
 	(*pBroj) = 0;
 	for (unsigned int i = 0; i < privremeni; i++) {
-		printf("\nime:%s, trazenoIme:%s\n", (sviKorisnici + i)->naziv, trazenoIme);
-		if (strcmp(trazenoIme, (sviKorisnici + i)->naziv) == 0) {
+		printf("\nID:%u, trazeniID:%u\n", (sviKorisnici + i)->id, trazeniID);
+		if (trazeniID ==(sviKorisnici + i)->id) {
 			printf("Igra je uspjesno obrisana.\n\n");
 			found = 1;
 		}
@@ -271,7 +282,7 @@ else if (datoteka == "igre.bin")
 			fwrite(pBroj, sizeof(unsigned int), 1, fp_tmp);
 		}
 		if (!found) {
-			printf("Nije pronadena igra sa unesenim imenom: %s\n\n", trazenoIme);
+			printf("Nije pronadena igra sa unesenim ID-om: %u\n\n", trazeniID);
 	}
 }
 	fclose(fp_tmp);
@@ -286,7 +297,6 @@ else if (datoteka == "igre.bin")
 }
 void fTrazi(char* datoteka, unsigned int* pBroj) {
 
-	NARUDZBA* sviKorisnici = NULL;
 	FILE* pDatotekaProcitaj = NULL;
 	pDatotekaProcitaj = fopen(datoteka, "rb");
 
@@ -302,47 +312,78 @@ void fTrazi(char* datoteka, unsigned int* pBroj) {
 			fclose(pDatotekaProcitaj);
 			return;
 		}
-
-		sviKorisnici = (NARUDZBA*)calloc(*pBroj, sizeof(NARUDZBA));
-		if (sviKorisnici == NULL) {
-			perror("Greska sviKorisnici");
-			exit(EXIT_FAILURE);
-		}
-		else {
-			fread(sviKorisnici, sizeof(NARUDZBA), *pBroj, pDatotekaProcitaj);
-			fclose(pDatotekaProcitaj);
-			printf("Unesite ime korisnika\n");
-			char privremenoIme[31] = { '\0' };
-			scanf("%30s", privremenoIme);
-			unsigned int statusPronalaska = 0;
-			unsigned int indeksPronalaska = -1;
-
-			for (unsigned int i = 0; i < *pBroj; i++)
-			{
-				printf("%u\t", (sviKorisnici + i)->id);
-				printf("%s ", (sviKorisnici + i)->ime);
-				printf("%s ", (sviKorisnici + i)->prezime);
-				printf("%s ", (sviKorisnici + i)->eMail);
-				printf("%s\n", (sviKorisnici + i)->brojMobitela);
-
-				if (!strcmp((sviKorisnici + i)->ime, privremenoIme)) {
-					statusPronalaska = 1;
-					indeksPronalaska = i;
-				}
-			}
-
-			if (statusPronalaska) {
-				printf("Korisnik pronadjen\n");
-				printf("%u\t", (sviKorisnici + indeksPronalaska)->id);
-				printf("%s ", (sviKorisnici + indeksPronalaska)->ime);
-				printf("%s ", (sviKorisnici + indeksPronalaska)->prezime);
-				printf("%s ", (sviKorisnici + indeksPronalaska)->eMail);
-				printf("%s\n", (sviKorisnici + indeksPronalaska)->brojMobitela);
+		else if (datoteka == "narudzbe.bin") {
+			NARUDZBA* sviKorisnici = NULL;
+			sviKorisnici = (NARUDZBA*)calloc(*pBroj, sizeof(NARUDZBA));
+			if (sviKorisnici == NULL) {
+				perror("Greska sviKorisnici");
+				exit(EXIT_FAILURE);
 			}
 			else {
-				printf("Nepostojeci korisnik\n");
+				fread(sviKorisnici, sizeof(NARUDZBA), *pBroj, pDatotekaProcitaj);
+				fclose(pDatotekaProcitaj);
+
+				printf("Unesite ime korisnika\n");
+				char privremenoIme[22] = { '\0' };
+				scanf("%21s", privremenoIme);
+				unsigned int found = 0;
+
+				printf("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+				printf("| %-2s | %-21s| %-21s| %-30s| %-13s | %-30s| %-21s| %-21s| %-7s| %-21s|\n", "ID", "IME", "PREZIME", "E-MAIL", "MOBITEL", "NAZIV", "ZANR", "EDICIJA", "CIJENA", "DATUM IZLASKA");
+				printf("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+
+				for (unsigned int i = 0; i < *pBroj; i++) {
+					if (strcmp((sviKorisnici + i)->ime, privremenoIme) == 0) {
+						printf("| %-2d | %-21s| %-21s| %-30s| %-13s | %-30s| %-21s| %-21s| %-7s| %-21s|\n", (sviKorisnici + i)->id, (sviKorisnici + i)->ime, (sviKorisnici + i)->prezime, (sviKorisnici + i)->eMail, (sviKorisnici + i)->brojMobitela, (sviKorisnici + i)->naziv,
+							(sviKorisnici + i)->zanr, (sviKorisnici + i)->edicija,
+							(sviKorisnici + i)->cijena, (sviKorisnici + i)->godina);
+						found = 1;
+					}
+				}
+				printf("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+				free(sviKorisnici);
+				if (!found) {
+					printf("Nijedna narudzba ne odgavara unesenom imenu korisnika: %s\n\n", privremenoIme);
+				}
 			}
+		}
+		else if (datoteka == "igre.bin") {
+			IGRA* sviKorisnici = NULL;
+			sviKorisnici = (IGRA*)calloc(*pBroj, sizeof(IGRA));
+			if (sviKorisnici == NULL) {
+				perror("Greska sviKorisnici");
+				exit(EXIT_FAILURE);
+			}
+			fread(sviKorisnici, sizeof(IGRA), *pBroj, pDatotekaProcitaj);
+			fclose(pDatotekaProcitaj);
+
+			printf("Unesite zanr igre:\n");
+			char privremenoIme[22] = { '\0' };
+			scanf("%21s", privremenoIme);
+			unsigned int found = 0;
+
+			printf("-------------------------------------------------------------------------------------------------------------------------\n");
+			printf("| %-2s | %-30s | %-21s | %-21s | %-7s | %-21s |\n", "ID", "NAZIV", "ZANR", "EDICIJA", "CIJENA", "DATUM IZLASKA");
+			printf("-------------------------------------------------------------------------------------------------------------------------\n");
+
+			for (unsigned int i = 0; i < *pBroj; i++) {
+				if (strcmp((sviKorisnici + i)->zanr, privremenoIme) == 0) {
+					printf("| %-2d | %-30s | %-21s | %-21s | %-7s | %-21s |\n", (sviKorisnici + i)->id, (sviKorisnici + i)->naziv,
+						(sviKorisnici + i)->zanr, (sviKorisnici + i)->edicija,
+						(sviKorisnici + i)->cijena, (sviKorisnici + i)->godina);
+					found = 1;
+				}
+			}
+			printf("-------------------------------------------------------------------------------------------------------------------------\n");
 			free(sviKorisnici);
+			if (!found) {
+				printf("Nijedna igra ne odgavara unesenom zanru: %s\n\n", privremenoIme);
+			}
+		}
+		else {
+			printf("Greska");
+			return;
+
 		}
 	}
 }
@@ -362,8 +403,12 @@ void fUredi (char* datoteka, unsigned int* pBroj)
 			exit(EXIT_FAILURE);
 		}
 		fread(pBroj, sizeof(unsigned int), 1, fp);
+		if ((*pBroj) == 0) {
+			printf("Morate prvo unijeti igru!\n");
+			return;
+		}
 		int searchID = 0;
-		printf("Unesite ID igre koju zelite obrisati!\n");
+		printf("Unesite ID igre koju zelite urediti!\n");
 		scanf("%d", &searchID);
 		unsigned int privremeni = 0;
 		int found = 0;
@@ -380,33 +425,35 @@ void fUredi (char* datoteka, unsigned int* pBroj)
 		(*pBroj) = 0;
 
 		for (unsigned int i = 0; i < privremeni; i++) {
-			printf("\nmyrecord:%d, trazenoIme:%d\n", (sviKorisnici + i)->id, searchID);
+			printf("\nID:%d, trazeniID:%d\n", (sviKorisnici + i)->id, searchID);
 			if ((sviKorisnici + i)->id == searchID) {
 
 				unsigned int dan, mjesec, godina;
 				char* mjeseci[] = { "sijecnja", "veljace", "ozujka", "travnja", "svibnja", "lipnja",
 									"srpnja", "kolovoza","rujna","listopada", "studenoga", "prosinca", };
-				printf("A record with requested name found and deleted.\n\n");
+				printf("Igra sa trazenim ID-om pronadena!\n\n");
 				
-				IGRA headNode = { 0 };
+				IGRA privremenaIgra = { 0 };
 				printf("Unesite naziv igre!\n");
-				scanf(" %30[^\n]s", headNode.naziv);
+				scanf(" %30[^\n]s", privremenaIgra.naziv);
+				printf("Unesite zanr igre!\n");
+				scanf(" %21[^\n]s", privremenaIgra.zanr);
 				printf("Unesite tip edicije!\n");
-				scanf(" %30[^\n]s", headNode.edicija);
+				scanf(" %21[^\n]s", privremenaIgra.edicija);
 				printf("Unesite cijenu igre!\n");
 				char privremenaCijena[6] = { 0 };
 				scanf("%5s", privremenaCijena);
-				strcpy(headNode.cijena, privremenaCijena);
-				strcat(headNode.cijena, "kn");
+				strcpy(privremenaIgra.cijena, privremenaCijena);
+				strcat(privremenaIgra.cijena, "kn");
 				do {
 					printf("Enter date(MM/DD/GGGG): \n");
 					scanf("%u/%u/%u", &mjesec, &dan, &godina);
 				} while (dan > 31 || dan <= 0 || mjesec > 12 || mjesec <= 0 || godina <= 2019 || godina > 9999);
-				snprintf(headNode.godina, sizeof(headNode.godina), "%u. %s %u.", dan, mjeseci[mjesec - 1], godina);
-				headNode.id = (*pBroj)++;
+				snprintf(privremenaIgra.godina, sizeof(privremenaIgra.godina), "%u. %s %u.", dan, mjeseci[mjesec - 1], godina);
+				privremenaIgra.id = (*pBroj)++;
 
 				fseek(fp_tmp, sizeof(unsigned int) + ((*pBroj - 1) * sizeof(IGRA)), SEEK_SET);
-				fwrite(&headNode, sizeof(IGRA), 1, fp_tmp);
+				fwrite(&privremenaIgra, sizeof(IGRA), 1, fp_tmp);
 				rewind(fp_tmp);
 				fwrite(pBroj, sizeof(unsigned int), 1, fp_tmp);
 
@@ -420,7 +467,7 @@ void fUredi (char* datoteka, unsigned int* pBroj)
 				fwrite(pBroj, sizeof(unsigned int), 1, fp_tmp);
 			}
 			if (!found) {
-				printf("No record(s) found with the requested name: %d\n\n", searchID);
+				printf("Igra sa ID-om: %d ne postoji!\n\n", searchID);
 			}
 		}
 		fclose(fp_tmp);
@@ -434,10 +481,10 @@ void fUredi (char* datoteka, unsigned int* pBroj)
 // BRISANJE SADRZAJA IZ DATOTEKA IGRE.BIN I NARUDZBE.BIN
 void fObrisiDatoteku(char* datoteka, unsigned int* pBroj) {
 
-	printf("Da li ste sigurni kako zelite obrisati sadrzaj iz datoteke %s?(unesite 'da/DA' za brisanje)\n",datoteka);
+	printf("Da li ste sigurni kako zelite obrisati sadrzaj iz datoteke %s?(unesite 'da/Da/DA' za brisanje)\n",datoteka);
 	char izbor[3] = { '\0' };
 	scanf(" %2s", izbor);
-	if (!strcmp("da", izbor) || !strcmp("DA", izbor))
+	if (!strcmp("da", izbor) || !strcmp("DA", izbor) || !strcmp("Da", izbor))
 	{
 		FILE* pDatoteka = fopen(datoteka, "wb");
 		if (pDatoteka == NULL) {
@@ -486,29 +533,32 @@ void fMenu(char* datoteka, unsigned int* pBroj, char* datoteka1, unsigned int* p
 	unsigned int izbornik = -1;
 
 	while (1) {
-		  printf(" _____________________________________________________\
-                \n|    |                                                |\
-                \n| BR |                    IZBORNIK                    |\
-                \n|____|________________________________________________|\
-				\n| 1  | Dodajte novu narudzbu u datoteku narudzbe.bin  |\
-				\n| 2  | Citanje iz datoteke narudzbe.bin               |\
-				\n| 3  | Trazite narudzbu preko imena                   |\
-                \n| 4  | Obrisite narudzbu preko ID-a                   |\
-                \n| 5  | Obrisite sve narudzbe iz datoteke narudzbe.bin |\
-                \n| 6  | Dodajte novu igru u datoteku igre.bin          |\
-                \n| 7  | Citanje iz datoteke igre.bin                   |\
-                \n| 8  | Uredite igru preko ID-a                        |\
-                \n| 9  | Obrisite igru preko ID-a                       |\
-                \n| 10 | Obrisite sve igre iz datoteke igre.bin         |\
-                \n| 11 | Zavrsetak programa                             |\
-				\n|____|________________________________________________|\n");
-
+		  printf(" _________________________________________________________\
+                \n|    |                                                    |\
+                \n| BR |                      IZBORNIK                      |\
+                \n|____|____________________________________________________|\
+				\n| 1  | Dodajte novu narudzbu u datoteku narudzbe.bin      |\
+				\n| 2  | Citanje iz datoteke narudzbe.bin                   |\
+				\n| 3  | Trazite narudzbu preko imena korisnika             |\
+                \n| 4  | Pogledajte kada je narudzba kupljena preko ID-a    |\
+                \n| 5  | Obrisite narudzbu preko ID-a                       |\
+                \n| 6  | Obrisite sve narudzbe iz datoteke narudzbe.bin     |\
+                \n| 7  | Dodajte novu igru u datoteku igre.bin              |\
+                \n| 8  | Citanje iz datoteke igre.bin                       |\
+                \n| 9  | Trazite igru preko zanra                           |\
+                \n| 10 | Uredite igru preko ID-a                            |\
+                \n| 11 | Sortiranje igara po zeljenom kriteriju             |\
+                \n| 12 | Obrisite igru preko ID-a                           |\
+                \n| 13 | Obrisite sve igre iz datoteke igre.bin             |\
+                \n| 14 | Zavrsetak programa                                 |\
+				\n|____|____________________________________________________|\n");
+		printf("Unesite broj zeljene naredbe:\n");
 		scanf("%u", &izbornik);
 
 		switch (izbornik) {
 		case 1:
 			fIspis(datoteka1, pBroj1); //Igre
-			fUnos(datoteka, pBroj,pBroj1); //Narudzbe
+			fUnos(datoteka, pBroj,datoteka1,pBroj1); //Narudzbe
 			break;
 		case 2:
 			fIspis(datoteka, pBroj); //Narudzbe
@@ -517,29 +567,40 @@ void fMenu(char* datoteka, unsigned int* pBroj, char* datoteka1, unsigned int* p
 			fTrazi(datoteka, pBroj); //Narudzbu
 			break;
 		case 4:
-			fObrisi(datoteka, pBroj); //Narudzbe
+			fIspis(datoteka, pBroj); //Narudzbe
+			fKupljeno(datoteka, pBroj); //Narudzbe
 			break;
 		case 5:
-		    fObrisiDatoteku(datoteka, pBroj); //narudzbe.bin
+			fIspis(datoteka, pBroj); //Igre
+			fObrisi(datoteka, pBroj); //Narudzbe
 			break;
 		case 6:
-			fUnos(datoteka1,pBroj1,pBroj); //Igre
+		    fObrisiDatoteku(datoteka, pBroj); //narudzbe.bin
 			break;
-		case 7: 
+		case 7:
+			fUnos(datoteka1,pBroj1,datoteka,pBroj); //Igre
+			break;
+		case 8: 
 		    fIspis(datoteka1,pBroj1); //Igre
 			break;
-		case 8:
+		case 9:
+			fTrazi(datoteka1, pBroj1); //Igre
+			break; 
+		case 10:
 			fIspis(datoteka1, pBroj1);
 			fUredi(datoteka1, pBroj1); //Igre
-			break; 
-		case 9:
+			break;
+		case 11:
+			fSortiranje(datoteka1, pBroj1); //Igre
+			break;
+		case 12:
 			fIspis(datoteka1, pBroj1);
 			fObrisi(datoteka1, pBroj1); //Igre
 			break;
-		case 10:
+		case 13:
 			fObrisiDatoteku(datoteka1, pBroj1); //igre.bin
 			break;
-		case 11:
+		case 14:
 			fIzlazakIzPrograma();
 			break;
 		default:
@@ -549,12 +610,241 @@ void fMenu(char* datoteka, unsigned int* pBroj, char* datoteka1, unsigned int* p
 }
 void fIzlazakIzPrograma(void) {
 
-	printf("Da li ste sigurni kako zelite zavrsiti program?(unesite 'da/DA' za izlazak)\n");
+	printf("Da li ste sigurni kako zelite zavrsiti program?(unesite 'da/Da/DA' za izlazak)\n");
 	char izbor[3] = { '\0' };
 	scanf(" %2s", izbor);
-	if (!strcmp("da", izbor) || !strcmp("DA", izbor)) {
+	if (!strcmp("da", izbor) || !strcmp("DA", izbor) || !strcmp("Da", izbor)) {
 		exit(EXIT_FAILURE);
 	}
 	return;
 }
 
+// SORTIRANJE IGARA
+void fSortiranje(char* datoteka, unsigned int* pBroj) {
+	FILE* pDatotekaProcitaj = NULL;
+	pDatotekaProcitaj = fopen(datoteka, "rb");
+
+	if (pDatotekaProcitaj == NULL) {
+		printf("Citanje datoteke %s je neuspjesno", datoteka);
+		return;
+	}
+	else {
+		fread(pBroj, sizeof(unsigned int), 1, pDatotekaProcitaj);
+
+		if (*pBroj == 0) {
+			printf("Popis je prazan!\n");
+			fclose(pDatotekaProcitaj);
+			return;
+		}
+
+		IGRA* sviKorisnici = NULL;
+		IGRA* temp = NULL;
+		sviKorisnici = (IGRA*)calloc(*pBroj, sizeof(IGRA));
+		temp = (IGRA*)calloc(*pBroj, sizeof(IGRA));
+
+		if (sviKorisnici == NULL || temp == NULL) {
+			perror("Greska igre");
+			exit(EXIT_FAILURE);
+		}
+		else {
+			fread(sviKorisnici, sizeof(IGRA), *pBroj, pDatotekaProcitaj);
+			fclose(pDatotekaProcitaj);
+			char izborGlavni[8] = { '\0' };
+			printf("Zelite li sortirati po alfabetu, cijeni ili zanru?(alfabet/Alfabet/ALFABET)(cijena/Cijena/CIJENA)(zanr/Zanr/ZANR)(edicija/Edicija/EDICIJA)\n");
+			scanf("%7s", izborGlavni);
+			if (!strcmp("alfabet", izborGlavni) || !strcmp("Alfabet", izborGlavni) || !strcmp("ALFABET", izborGlavni)) {
+				char izbor[8] = { '\0' };
+				printf("Zelite li sortirati uzlazno ili silazno?\n");
+				scanf("%7s", izbor);
+				if (!strcmp("uzlazno", izbor) || !strcmp("Uzlazno", izbor) || !strcmp("UZLAZNO", izbor)) {
+					for (unsigned int i = 0; i <= *pBroj - 1; i++)
+						for (unsigned int j = i + 1; j <= (*pBroj) - 1; j++) {
+							if (strcmp((sviKorisnici + i)->naziv, (sviKorisnici + j)->naziv) > 0) {
+								memcpy(temp, (sviKorisnici + i), sizeof(IGRA));
+								memcpy((sviKorisnici + i), (sviKorisnici + j), sizeof(IGRA));
+								memcpy((sviKorisnici + j), temp, sizeof(IGRA));
+							}
+						}
+				}
+				else if (!strcmp("silazno", izbor) || !strcmp("Silazno", izbor) || !strcmp("SILAZNO", izbor)) {
+					for (unsigned int i = 0; i <= *pBroj - 1; i++)
+						for (unsigned int j = i + 1; j <= (*pBroj) - 1; j++) {
+							if (strcmp((sviKorisnici + i)->naziv, (sviKorisnici + j)->naziv) < 0) {
+								memcpy(temp, (sviKorisnici + i), sizeof(IGRA));
+								memcpy((sviKorisnici + i), (sviKorisnici + j), sizeof(IGRA));
+								memcpy((sviKorisnici + j), temp, sizeof(IGRA));
+							}
+						}
+
+				}
+				else {
+					printf("Krivo unesen nacin sortiranja!\n");
+					return;
+				}
+}
+			else if(!strcmp("cijena", izborGlavni) || !strcmp("Cijena", izborGlavni) || !strcmp("CIJENA", izborGlavni)) {
+				char izbor[8] = { '\0' };
+				printf("Zelite li sortirati uzlazno ili silazno?\n");
+				scanf("%7s", izbor);
+				if (!strcmp("uzlazno", izbor) || !strcmp("Uzlazno", izbor) || !strcmp("UZLAZNO", izbor)) {
+					
+					for (unsigned int i = 0; i <= *pBroj - 1; i++)
+						for (unsigned int j = i + 1; j <= (*pBroj) - 1; j++) {
+							int num = atoi((sviKorisnici + i)->cijena);
+							int num1 = atoi((sviKorisnici + j)->cijena);
+							if (num > num1) {
+								memcpy(temp, (sviKorisnici + i), sizeof(IGRA));
+								memcpy((sviKorisnici + i), (sviKorisnici + j), sizeof(IGRA));
+								memcpy((sviKorisnici + j), temp, sizeof(IGRA));
+							}
+						}
+				}
+				 else if(!strcmp("silazno", izbor) || !strcmp("Silazno", izbor) || !strcmp("SILAZNO", izbor)){
+					for (unsigned int i = 0; i <= *pBroj - 1; i++)
+						for (unsigned int j = i + 1; j <= (*pBroj) - 1; j++) {
+							int num = atoi((sviKorisnici + i)->cijena);
+							int num1 = atoi((sviKorisnici + j)->cijena);
+							if (num < num1) {
+								memcpy(temp, (sviKorisnici + i), sizeof(IGRA));
+								memcpy((sviKorisnici + i), (sviKorisnici + j), sizeof(IGRA));
+								memcpy((sviKorisnici + j), temp, sizeof(IGRA));
+							}
+						}
+				 }
+				 else {
+					 printf("Krivo unesen nacin sortiranja!\n");
+					 return;
+				 }
+			}
+			else if (!strcmp("zanr", izborGlavni) || !strcmp("Zanr", izborGlavni) || !strcmp("ZANR", izborGlavni)) {
+				char izbor[8] = { '\0' };
+				printf("Zelite li sortirati uzlazno ili silazno?\n");
+				scanf("%7s", izbor);
+				if (!strcmp("uzlazno", izbor) || !strcmp("Uzlazno", izbor) || !strcmp("UZLAZNO", izbor)) {
+					for (unsigned int i = 0; i <= *pBroj - 1; i++)
+						for (unsigned int j = i + 1; j <= (*pBroj) - 1; j++) {
+							if (strcmp((sviKorisnici + i)->zanr, (sviKorisnici + j)->zanr) > 0) {
+								memcpy(temp, (sviKorisnici + i), sizeof(IGRA));
+								memcpy((sviKorisnici + i), (sviKorisnici + j), sizeof(IGRA));
+								memcpy((sviKorisnici + j), temp, sizeof(IGRA));
+							}
+						}
+				}
+				else if(!strcmp("silazno", izbor) || !strcmp("Silazno", izbor) || !strcmp("SILAZNO", izbor)){
+					for (unsigned int i = 0; i <= *pBroj - 1; i++)
+						for (unsigned int j = i + 1; j <= (*pBroj) - 1; j++) {
+							if (strcmp((sviKorisnici + i)->zanr, (sviKorisnici + j)->zanr) < 0) {
+								memcpy(temp, (sviKorisnici + i), sizeof(IGRA));
+								memcpy((sviKorisnici + i), (sviKorisnici + j), sizeof(IGRA));
+								memcpy((sviKorisnici + j), temp, sizeof(IGRA));
+							}
+						}
+				}
+				else {
+					printf("Krivo unesen nacin sortiranja!\n");
+					return;
+				}
+			}
+			else if (!strcmp("edicija", izborGlavni) || !strcmp("Edicija", izborGlavni) || !strcmp("EDICIJA", izborGlavni)) {
+				char izbor[8] = { '\0' };
+				printf("Zelite li sortirati uzlazno ili silazno?\n");
+				scanf("%7s", izbor);
+				if (!strcmp("uzlazno", izbor) || !strcmp("Uzlazno", izbor) || !strcmp("UZLAZNO", izbor)) {
+					for (unsigned int i = 0; i <= *pBroj - 1; i++)
+						for (unsigned int j = i + 1; j <= (*pBroj) - 1; j++) {
+							if (strcmp((sviKorisnici + i)->edicija, (sviKorisnici + j)->edicija) > 0) {
+								memcpy(temp, (sviKorisnici + i), sizeof(IGRA));
+								memcpy((sviKorisnici + i), (sviKorisnici + j), sizeof(IGRA));
+								memcpy((sviKorisnici + j), temp, sizeof(IGRA));
+							}
+						}
+				}
+				else if (!strcmp("silazno", izbor) || !strcmp("Silazno", izbor) || !strcmp("SILAZNO", izbor)) {
+					for (unsigned int i = 0; i <= *pBroj - 1; i++)
+						for (unsigned int j = i + 1; j <= (*pBroj) - 1; j++) {
+							if (strcmp((sviKorisnici + i)->edicija, (sviKorisnici + j)->edicija) < 0) {
+								memcpy(temp, (sviKorisnici + i), sizeof(IGRA));
+								memcpy((sviKorisnici + i), (sviKorisnici + j), sizeof(IGRA));
+								memcpy((sviKorisnici + j), temp, sizeof(IGRA));
+							}
+						}
+				}
+			}
+				else {
+					printf("\nKrivo unesen nacin sortiranja!\n\n");
+					return;
+				}
+			printf("-------------------------------------------------------------------------------------------------------------------------\n");
+			printf("| %-2s | %-30s | %-21s | %-21s | %-7s | %-21s |\n", "ID", "NAZIV", "ZANR", "EDICIJA", "CIJENA", "DATUM IZLASKA");
+			printf("-------------------------------------------------------------------------------------------------------------------------\n");
+
+			for (unsigned int i = 0; i <= *pBroj-1; i++)
+			{
+				printf("| %-2d | %-30s | %-21s | %-21s | %-7s | %-21s |\n", (sviKorisnici + i)->id, (sviKorisnici + i)->naziv,
+					(sviKorisnici + i)->zanr, (sviKorisnici + i)->edicija,
+					(sviKorisnici + i)->cijena, (sviKorisnici + i)->godina);
+
+			}
+			printf("-------------------------------------------------------------------------------------------------------------------------\n");
+			free(sviKorisnici);
+			free(temp);
+		}
+	}
+}
+
+void fKupljeno(char* datoteka, unsigned int* pBroj) {
+	FILE* pDatotekaProcitaj = NULL;
+	pDatotekaProcitaj = fopen(datoteka, "rb");
+
+	if (pDatotekaProcitaj == NULL) {
+		fprintf(stderr, "Citanje datoteke %s je neuspjesno", datoteka);
+		perror("");
+		exit(EXIT_FAILURE);
+	}
+	else {
+		fread(pBroj, sizeof(unsigned int), 1, pDatotekaProcitaj);
+		if (*pBroj == 0) {
+			printf("Popis je prazan!\n");
+			fclose(pDatotekaProcitaj);
+			return;
+		}
+		else {
+			NARUDZBA* sviKorisnici = NULL;
+			sviKorisnici = (NARUDZBA*)calloc(*pBroj, sizeof(NARUDZBA));
+			if (sviKorisnici == NULL) {
+				perror("Greska sviKorisnici");
+				exit(EXIT_FAILURE);
+			}
+			else {
+				fread(sviKorisnici, sizeof(NARUDZBA), *pBroj, pDatotekaProcitaj);
+				fclose(pDatotekaProcitaj);
+
+				printf("Unesite ID narudzbe\n");
+				unsigned int privremenoIme = 0;
+				scanf("%u", &privremenoIme);
+				unsigned int found = 0;
+
+				printf("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+				printf("| %-2s | %-21s| %-21s| %-30s| %-13s | %-30s| %-21s| %-21s| %-7s| %-21s|\n", "ID", "IME", "PREZIME", "E-MAIL", "MOBITEL", "NAZIV", "ZANR", "EDICIJA", "CIJENA", "DATUM IZLASKA");
+				printf("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+
+				for (unsigned int i = 0; i < *pBroj; i++) {
+					if ((sviKorisnici + i)->id == privremenoIme) {
+						printf("| %-2d | %-21s| %-21s| %-30s| %-13s | %-30s| %-21s| %-21s| %-7s| %-21s|\n", (sviKorisnici + i)->id, (sviKorisnici + i)->ime, (sviKorisnici + i)->prezime, (sviKorisnici + i)->eMail, (sviKorisnici + i)->brojMobitela, (sviKorisnici + i)->naziv,
+							(sviKorisnici + i)->zanr, (sviKorisnici + i)->edicija,
+							(sviKorisnici + i)->cijena, (sviKorisnici + i)->godina);
+						found = 1;
+						printf("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+
+						printf("Narudzba je kupljena: %s\n\n", (sviKorisnici + i)->kupljeno);
+					}
+				}
+				free(sviKorisnici);
+				if (!found) {
+					printf("Nijedna narudzba ne odgavara unesenom ID-u: %u\n\n", privremenoIme);
+				}
+			}
+		}
+
+	}
+}
