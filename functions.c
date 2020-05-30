@@ -104,7 +104,7 @@ void fUnos(char* datoteka, unsigned int* pBroj, char* datoteka1,unsigned int* pB
 		strcat(privremenaIgra.cijena, "kn");
 
 		do {
-			printf("Enter date(MM/DD/GGGG): \n");
+			printf("Unesite datum(MM/DD/GGGG): \n");
 			scanf("%u/%u/%u", &mjesec, &dan, &godina);
 		} while (dan > 31 || dan <= 0 || mjesec > 12 || mjesec <= 0 || godina <= 2019 || godina > 9999);
 		snprintf(privremenaIgra.godina, sizeof(privremenaIgra.godina), "%u. %s %u.", dan, mjeseci[mjesec - 1], godina);
@@ -446,7 +446,7 @@ void fUredi (char* datoteka, unsigned int* pBroj)
 				strcpy(privremenaIgra.cijena, privremenaCijena);
 				strcat(privremenaIgra.cijena, "kn");
 				do {
-					printf("Enter date(MM/DD/GGGG): \n");
+					printf("Unesite datum(MM/DD/GGGG): \n");
 					scanf("%u/%u/%u", &mjesec, &dan, &godina);
 				} while (dan > 31 || dan <= 0 || mjesec > 12 || mjesec <= 0 || godina <= 2019 || godina > 9999);
 				snprintf(privremenaIgra.godina, sizeof(privremenaIgra.godina), "%u. %s %u.", dan, mjeseci[mjesec - 1], godina);
@@ -533,6 +533,7 @@ void fMenu(char* datoteka, unsigned int* pBroj, char* datoteka1, unsigned int* p
 	unsigned int izbornik = -1;
 
 	while (1) {
+
 		  printf(" _________________________________________________________\
                 \n|    |                                                    |\
                 \n| BR |                      IZBORNIK                      |\
