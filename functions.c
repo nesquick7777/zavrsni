@@ -837,6 +837,7 @@ void fSortiranje(char* datoteka, unsigned int* pBroj) {
 	}
 }
 
+// Datum kada je kupljena igra preko ID-a
 void fKupljeno(char* datoteka, unsigned int* pBroj) {
 	FILE* pDatotekaProcitaj = NULL;
 	pDatotekaProcitaj = fopen(datoteka, "rb");
